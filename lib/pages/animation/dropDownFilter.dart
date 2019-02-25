@@ -45,7 +45,7 @@ class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProvid
         backgroundColor: Color.fromRGBO(137, 188, 200, 1),
         title: Text('下拉筛选框'),
       ),
-      body: Stack(
+      body: Stack( //stack设置为overflow：visible之后，内部的元素中超出的部分就不能触发点击事件；所以尽量避免这种布局
         children: <Widget>[
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
