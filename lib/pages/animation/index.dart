@@ -10,7 +10,9 @@ class _AnimationPageState extends State<AnimationPage> {
   List<RouteModel> animationList = [
     RouteModel('小例子', '/animation/firstDemo'),
     RouteModel('AnimatedWidgetDemo', '/animation/AnimatedWidgetDemo'),
-    RouteModel('downDropFilter', '/animation/downDropFilter'),
+    RouteModel('OneDropPage', '/animation/oneDropPage'),
+    RouteModel('DropFiltersPage', '/animation/dropFiltersPage'),
+    RouteModel('FoldAnim', '/animation/FoldAnim')
   ];
   @override
   Widget build(BuildContext context) {

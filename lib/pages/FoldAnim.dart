@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class DropDownFilter extends StatefulWidget {
-  DropDownFilter({Key key, this.widget});
+class FoldA extends StatefulWidget {
+  FoldA({Key key, this.widget});
   final Widget widget;
   @override
-  _DropDownFilterState createState() => _DropDownFilterState();
+  _FoldAState createState() => _FoldAState();
 }
 
-class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProviderStateMixin {
+class _FoldAState extends State<FoldA> with SingleTickerProviderStateMixin {
   Animation<double> animation;
   AnimationController controller;
   List<String> sorts = [
