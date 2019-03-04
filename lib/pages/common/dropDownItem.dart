@@ -3,9 +3,8 @@ import '../../model/filterButtonModel.dart';
 
 
 class DropDownFilter extends StatefulWidget {
-  DropDownFilter({Key key, this.otherWidget, this.type, this.buttons});
-  final Widget otherWidget;//除了筛选按钮部分Widget
-  final String type;//类型：'Column','Row'
+  DropDownFilter({Key key, this.otherWidget, this.buttons});
+  final Widget otherWidget;//页面除了筛选按钮部分Widget 新车页：列表
   final List<FilterButtonModel> buttons; //按钮数组 数据类型FilterButtonModel
 
   @override
@@ -16,7 +15,9 @@ class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProvid
   Animation<double> animation;
   AnimationController controller;
   double innerHeight = 150.0;
+  bool isMask = false; //下拉蒙层是否显示
   FilterButtonModel curButton;
+  int curFilterIndex;
 
   initState() {
     // TODO: implement initState
@@ -32,31 +33,58 @@ class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProvid
     animation = new Tween(begin: 0.0, end: innerHeight).animate(controller)
     ..addListener(() {
       //这行如果不写，没有动画效果
-      setState(() {
-      });
+      setState(() {});
     });
-    // controller.forward();
   }
 
   void ontap () {
     controller.reverse();
-    print('object');
+    triggerIcon(widget.buttons[curFilterIndex]);
+    triggerMask();
   }
 
+  void triggerMask () {
+    setState(() {
+      isMask = !isMask;
+    });
+  }
+
+  void triggerIcon (btn) {
+    if(btn.direction == 'up') {
+      btn.direction = 'down';
+    } else {
+      btn.direction = 'up';
+    }
+  }
+
+  void initButtonStatus () {
+    widget.buttons.forEach((i) {
+      setState(() {
+        i.direction = 'down';
+      });
+    });
+  }
+
+  //更新数据
+  void updateData (i) {
+    setState(() {
+      curButton = widget.buttons[i];
+      curFilterIndex = i;
+    });
+  }
   @override
   Widget build(BuildContext context) {
-    return 
-    Expanded(
-      child: 
-      Stack( //stack设置为overflow：visible之后，内部的元素中超出的部分就不能触发点击事件；所以尽量避免这种布局
+    return Expanded(
+      child: Stack( //stack设置为overflow：visible之后，内部的元素中超出的部分就不能触发点击事件；所以尽量避免这种布局
         children: <Widget>[
           Column(
             children: <Widget>[
               _button(),
-              // widget
+              // widget.otherWidget
             ],
           ),
-          _contentList(curButton)
+          _contentList(curButton),
+          
         ],
       )
     );
@@ -66,34 +94,43 @@ class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProvid
   Widget _button() {
     return Row(
       children: List.generate(widget.buttons.length, (i) {
-        return FlatButton(
-          padding: EdgeInsets.only(left: 10),
-          color: Colors.yellow,
-          child: SizedBox(
-            height: 50,
-            width: 100,
+        final thisButton = widget.buttons[i];
+        return SizedBox(
+          height: 50,
+          width: MediaQuery.of(context).size.width / widget.buttons.length,
+          child: FlatButton(
+            padding: EdgeInsets.only(top: 0, left: 10),
             child: Row(
               children: <Widget>[
-                Text(curButton.title),
-                Icon(Icons.keyboard_arrow_down,color: Colors.orange,)
+                Text(thisButton.title,),
+                _rotateIcon(thisButton.direction)
               ],
             ),
-          ),
-          onPressed: () {
-            setState(() {
-              curButton = widget.buttons[i];
-            });
-            if(curButton.callback == null) {
-              if(animation.status == AnimationStatus.completed) {
-                controller.reverse();
-              } else {
-                controller.forward();
+            onPressed: () {
+              //处理 下拉列表打开时，点击别的按钮
+              if(isMask && i != curFilterIndex) {
+                initButtonStatus();
+                triggerIcon(widget.buttons[i]);
+                updateData(i);
+                return;
               }
-            } else {
-              curButton.callback();
-            }
-            
-          },
+
+              updateData(i);
+
+              if(curButton.callback == null) {
+                if(animation.status == AnimationStatus.completed) {
+                  controller.reverse();
+                } else {
+                  controller.forward();
+                }
+                triggerMask();
+              } else {
+                curButton.callback();
+              }
+              
+              triggerIcon(widget.buttons[i]);
+            },
+          ),
         );
       }),
     );
@@ -104,16 +141,21 @@ class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProvid
   Widget _contentList(FilterButtonModel lists) {
     if(lists.contents != null && lists.contents.length > 0 ) {
       return Positioned(
-          height: animation.value,
           width:  MediaQuery.of(context).size.width,
           top: 50,
           left: 0,
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            color: Colors.red,
-            height: innerHeight,
-            child: _innerConList(lists)
+          child: Column(
+            children: <Widget>[
+              Container(
+                width: MediaQuery.of(context).size.width,
+                color: Colors.white,
+                height: animation.value,
+                child: _innerConList(lists)
+              ),
+              _mask()
+            ],
           )
+          
       );
     } else {
       return Container(height: 0,);
@@ -123,7 +165,7 @@ class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProvid
   Widget _innerConList(FilterButtonModel lists) {
     if(lists.type == 'Row') {
       setState(() {
-        innerHeight = 150.0;
+        innerHeight = 50.0 * lists.contents.length;
       });
       
       return Container(
@@ -136,7 +178,7 @@ class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProvid
             return GestureDetector(
               onTap: ontap,
               child: Container(
-                width: (MediaQuery.of(context).size.width - 20) / 3,
+                width: (MediaQuery.of(context).size.width - 20) / 3, //每行显示3个
                 child: Container(
                   margin: EdgeInsets.only(left: 5, right: 5),
                   alignment: Alignment.center,
@@ -155,16 +197,47 @@ class _DropDownFilterState extends State<DropDownFilter> with SingleTickerProvid
       );
     } else {
       setState(() {
-        innerHeight = 250.0;
+        innerHeight = 50.0 * lists.contents.length;
       });
       return ListView(
         children: List.generate(lists.contents.length, (i) {
           return GestureDetector(
             onTap: ontap,
-            child: Text(lists.contents[i])
+            child: Container(
+              height: 50,
+              padding: EdgeInsets.only(top: 15, left: 15, bottom: 15),
+              child: Text(lists.contents[i],style: TextStyle(
+              
+              ),),
+            )
+            
           );
         }),
       );
+    }
+  }
+
+  //筛选的黑色蒙层
+  Widget _mask() {
+    if(isMask) {
+      return Container(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        color: Color.fromRGBO(0, 0, 0, 0.5),
+      );
+    } else {
+      return Container( 
+        height: 0,
+      );
+    }
+  }
+
+  //右侧旋转箭头组建
+  Widget _rotateIcon(direction) {
+    if(direction == 'up') {
+      return Icon(Icons.keyboard_arrow_up, color: Colors.orange);
+    } else {
+      return Icon(Icons.keyboard_arrow_down, color: Colors.orange,);
     }
   }
 
